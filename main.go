@@ -1,4 +1,4 @@
-package shap_planner_backend
+package main
 
 import (
 	"log"
