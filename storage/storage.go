@@ -2,17 +2,15 @@ package storage
 
 import (
 	"database/sql"
-	_ "database/sql"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/glebarez/go-sqlite"
 	"shap-planner-backend/models"
-	_ "shap-planner-backend/models"
 )
 
 var DB *sql.DB
 
 func InitDB(filepath string) error {
 	var err error
-	DB, err = sql.Open("sqlite3", filepath)
+	DB, err = sql.Open("sqlite", filepath)
 	if err != nil {
 		return err
 	}
