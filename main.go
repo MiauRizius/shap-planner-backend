@@ -2,20 +2,21 @@ package main
 
 import (
 	"log"
-	"net/http"
-	"shap-planner-backend/handlers"
+	"shap-planner-backend/server"
 	"shap-planner-backend/storage"
 )
 
 func main() {
-	err := storage.InitDB("database.db")
+	var SERVER = server.InitServer()
+
+	err := storage.InitDB(SERVER.DatabasePath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/register", handlers.Register)
-	http.HandleFunc("/login", handlers.Login)
+	SERVER.Run()
+}
 
-	log.Println("Server läuft auf :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+func Setup() {
+	//TODO: first configuration
 }
