@@ -35,7 +35,7 @@ The app is fully open source, lightweight, and can run on small devices like Ras
 
 | Variable       | Description                                           | Example          |
 |----------------|-------------------------------------------------------|----------------|
-| `JWT_SECRET`   | Secret used to sign JWT tokens                        | `superrandomsecret123` |
+| `SHAP-JWT_SECRET`   | Secret used to sign JWT tokens                        | `superrandomsecret123` |
 
 ---
 
