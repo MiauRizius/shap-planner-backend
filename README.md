@@ -10,11 +10,11 @@ The app is fully open source, lightweight, and can run on small devices like Ras
 ---
 
 ## Summary
-1. [Features](#features)
-2. [Configuration](#configuration)
-3. [Setup](#setup)
-4. [Contributing](#contributing)
-5. [License](#license)
+1. [Features](#-features)
+2. [Configuration](#-configuration)
+3. [Setup](#-setup)
+4. [Contributing](#-contributing)
+5. [License](#-license)
 
 ---
 
