@@ -50,7 +50,7 @@ cd shap-planner-backend
 2. Set environment variables:
 
 ```bash
-export JWT_SECRET="your_super_random_secret"
+export SHAP_JWT_SECRET="your_super_random_secret"
 ```
 
 3. Run the server:
