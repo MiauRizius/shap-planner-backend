@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"shap-planner-backend/auth"
 	"shap-planner-backend/config"
 	"shap-planner-backend/handlers"
 )
@@ -42,9 +43,16 @@ func InitServer() *Server {
 }
 
 func (server *Server) Run() {
-	http.HandleFunc("/register", handlers.Register)
-	http.HandleFunc("/login", handlers.Login)
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/login", handlers.Login)
+
+	protected := auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.GetExpenses))
+	mux.Handle("/expenses", protected)
+
+	adminOnly := auth.AuthMiddleware(server.JWTSecret)(auth.RequireRole("admin")(http.HandlerFunc(handlers.AdminPanel)))
+	mux.Handle("/admin", adminOnly)
 
 	log.Printf("Listening on port %s", server.Port)
-	log.Fatal(http.ListenAndServe(":"+server.Port, nil))
+	log.Fatal(http.ListenAndServe(":"+server.Port, mux))
 }

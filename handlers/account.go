@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"shap-planner-backend/auth"
 	"shap-planner-backend/models"
 	"shap-planner-backend/storage"
 	"shap-planner-backend/utils"
@@ -11,7 +12,7 @@ import (
 func Register(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	_ = json.NewDecoder(r.Body).Decode(&user)
-	hashed, _ := utils.HashPassword(user.Password)
+	hashed, _ := auth.HashPassword(user.Password)
 	user.Password = hashed
 	user.ID = utils.GenerateUUID()
 
@@ -36,7 +37,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !utils.CheckPasswordHash(creds.Password, user.Password) {
+	if !auth.CheckPasswordHash(creds.Password, user.Password) {
 		http.Error(w, "Wrong password", http.StatusUnauthorized)
 		return
 	}
