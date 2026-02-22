@@ -1,6 +1,6 @@
 # ShAp-Planner
 
-WGTracker is a **self-hosted app** for managing finances, tasks, and data within shared households.  
+ShAp-Planner is a **self-hosted app** for managing finances, tasks, and data within shared households.  
 The app is fully open source, lightweight, and can run on small devices like Raspberry Pi or older computers.
 
 **Backend:** Go  
