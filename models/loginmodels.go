@@ -1,10 +1,11 @@
 package models
 
-import "time"
-
 type RefreshToken struct {
-	ID        string    `json:id`
-	UserID    string    `json:userid`
-	Token     string    `json:token`
-	ExpiresAt time.Time `json:expiresat`
+	ID         string `json:id`
+	UserID     string `json:userid`
+	Token      string `json:token`
+	ExpiresAt  int64  `json:expiresat`
+	CreatedAt  int64  `json:createdat`
+	Revoked    bool   `json:revoked`
+	DeviceInfo string `json:deviceinfo`
 }

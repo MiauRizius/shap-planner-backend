@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"shap-planner-backend/auth"
 	"shap-planner-backend/models"
 	"shap-planner-backend/storage"
 	"shap-planner-backend/utils"
+	"time"
 )
 
 func Register(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +40,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 }
-
 func Login(w http.ResponseWriter, r *http.Request) {
 	var creds struct {
 		Username string `json:"username"`
@@ -51,11 +52,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	user, err := storage.GetUserByUsername(creds.Username)
 	if err != nil {
+		println("user " + creds.Username + " not found")
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
 	if !auth.CheckPasswordHash(creds.Password, user.Password) {
+		println("invalid password")
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
@@ -66,29 +69,55 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := auth.GenerateJWT(user.ID, user.Role, secret)
+	accessToken, err := auth.GenerateJWT(user.ID, user.Role, secret)
 	if err != nil {
 		http.Error(w, "Could not generate token", http.StatusInternalServerError)
 		return
 	}
 
-	type userResp struct {
-		ID       string `json:"id"`
-		Username string `json:"username"`
-		Role     string `json:"role"`
+	refreshTokenPlain, err := utils.GenerateRefreshToken()
+	if err != nil {
+		http.Error(w, "could not generate refresh token", http.StatusInternalServerError)
+		return
+	}
+	refreshHash := utils.HashToken(refreshTokenPlain)
+	refreshID := utils.GenerateUUID()
+	refreshExpires := time.Now().Add(7 * 24 * time.Hour).Unix() // expiry: 7 days
+
+	deviceInfo := r.Header.Get("User-Agent")
+
+	if err := storage.AddRefreshToken(models.RefreshToken{
+		ID:         refreshID,
+		UserID:     user.ID,
+		Token:      refreshHash,
+		ExpiresAt:  refreshExpires,
+		DeviceInfo: deviceInfo,
+		CreatedAt:  time.Now().Unix(),
+		Revoked:    false,
+	}); err != nil {
+		http.Error(w, "could not save refresh token", http.StatusInternalServerError)
+		return
+	}
+
+	// Return access + refresh token (refresh in plain for client to store securely)
+	resp := map[string]interface{}{
+		"access_token":  accessToken,
+		"refresh_token": refreshTokenPlain,
+		"user": map[string]interface{}{
+			"id":       user.ID,
+			"username": user.Username,
+			"role":     user.Role,
+		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"token": token,
-		"user": userResp{
-			ID:       user.ID,
-			Username: user.Username,
-			Role:     user.Role,
-		},
-	})
+	json.NewEncoder(w).Encode(resp)
 }
-
+func Logout(w http.ResponseWriter, r *http.Request) {
+	claims := r.Context().Value(auth.UserContextKey).(*auth.Claims)
+	storage.RevokeAllRefreshTokensForUser(claims.UserID)
+	w.WriteHeader(204)
+}
 func TestHandler(w http.ResponseWriter, r *http.Request) {
 	claimsRaw := r.Context().Value(auth.UserContextKey)
 	if claimsRaw == nil {
@@ -108,4 +137,51 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {
 		"role":    claims.Role,
 		"msg":     "access granted to protected endpoint",
 	})
+}
+func RefreshToken(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	hashed := utils.HashToken(req.RefreshToken)
+
+	tokenRow, err := storage.GetRefreshToken(hashed)
+	if err != nil || tokenRow.Revoked || tokenRow.ExpiresAt < time.Now().Unix() {
+		http.Error(w, "Invalid refresh token", http.StatusUnauthorized)
+		return
+	}
+
+	if err := storage.RevokeRefreshToken(tokenRow.ID); err != nil {
+		log.Println(err)
+	}
+
+	newToken, _ := utils.GenerateRefreshToken()
+	newHash := utils.HashToken(newToken)
+	newExpires := time.Now().Add(7 * 24 * time.Hour).Unix() //7 days
+	newID := utils.GenerateUUID()
+	deviceInfo := r.Header.Get("User-Agent")
+	if err = storage.AddRefreshToken(models.RefreshToken{
+		ID:         newID,
+		UserID:     tokenRow.UserID,
+		Token:      newHash,
+		ExpiresAt:  newExpires,
+		CreatedAt:  time.Now().Unix(),
+		Revoked:    false,
+		DeviceInfo: deviceInfo,
+	}); err != nil {
+		return
+	}
+
+	accessToken, _ := auth.GenerateJWT(tokenRow.UserID, "", []byte(os.Getenv("SHAP_JWT_SECRET")))
+
+	if err = json.NewEncoder(w).Encode(map[string]string{
+		"access_token":  accessToken,
+		"refresh_token": newToken,
+	}); err != nil {
+		return
+	}
 }

@@ -48,6 +48,8 @@ func (server *Server) Run() {
 	// Public
 	mux.HandleFunc("/api/login", handlers.Login)
 	mux.HandleFunc("/api/register", handlers.Register)
+	mux.HandleFunc("/api/refresh", handlers.RefreshToken)
+	mux.HandleFunc("/api/logout", handlers.Logout)
 
 	// Login required
 	mux.Handle("/api/expenses", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.GetExpenses)))
