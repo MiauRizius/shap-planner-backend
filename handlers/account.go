@@ -55,7 +55,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	user, err := storage.GetUserByUsername(creds.Username)
 	if err != nil {
-		println("user " + creds.Username + " not found")
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}

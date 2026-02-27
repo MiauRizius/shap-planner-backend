@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"shap-planner-backend/models"
+	"strings"
 
 	_ "github.com/glebarez/go-sqlite"
 )
@@ -58,11 +59,11 @@ func InitDB(filepath string) error {
 
 // Users
 func AddUser(user models.User) error {
-	_, err := DB.Exec("INSERT INTO users(id, username, password, role) VALUES (?, ?, ?, ?)", user.ID, user.Username, user.Password, user.Role)
+	_, err := DB.Exec("INSERT INTO users(id, username, password, role) VALUES (?, ?, ?, ?)", user.ID, strings.ToLower(user.Username), user.Password, user.Role)
 	return err
 }
 func GetUserByUsername(username string) (models.User, error) {
-	row := DB.QueryRow("SELECT * FROM users WHERE username = ?", username)
+	row := DB.QueryRow("SELECT * FROM users WHERE username = ?", strings.ToLower(username))
 	var user models.User
 	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.Role)
 	return user, err
@@ -70,7 +71,7 @@ func GetUserByUsername(username string) (models.User, error) {
 func GetUserById(id string) (models.User, error) {
 	row := DB.QueryRow("SELECT * FROM users WHERE id = ?", id)
 	var user models.User
-	err := row.Scan(&user.ID, &user.Username, &user.Password)
+	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.Role)
 	return user, err
 }
 
