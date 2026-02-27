@@ -11,6 +11,35 @@ The app is fully open source, lightweight, and can run on small devices like Ras
 
 ## Installation
 
+### Docker  Compose (recommended)
+1. Download docker-compose.yaml
+````shell
+$ curl -L https://git.miaurizius.de/MiauRizius/shap-planner-backend/raw/branch/main/docker-compose.yaml -o docker-compose.yaml
+````
+or create it yourself and enter the following content
+````yaml
+services:
+  shap-planner:
+    image: git.miaurizius.de/miaurizius/shap-planner-backend:latest
+    container_name: shap-planner
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SHAP_JWT_SECRET=SECURE_RANDOM_STRING # Must be at least 32 characters long
+    volumes:
+      - ./appdata:/appdata # To edit your configuration files
+````
+
+2. Start the container
+````shell
+$ docker compose up -d
+````
+
+3. Edit configuration as you like
+
+### Build from source
+
 1. Clone the repository:
 ```bash
 git clone https://git.miaurizius.de/MiauRizius/shap-planner-backend.git

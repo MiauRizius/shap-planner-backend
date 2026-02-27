@@ -1,0 +1,11 @@
+services:
+    shap-planner:
+        image: git.miaurizius.de/miaurizius/shap-planner-backend:latest
+        container_name: shap-planner
+        restart: unless-stopped
+        ports:
+          - "8080:8080"
+        environment:
+          - SHAP_JWT_SECRET=SECURE_RANDOM_STRING # Must be at least 32 characters long
+        volumes:
+          - ./appdata:/appdata # To edit your configuration files
