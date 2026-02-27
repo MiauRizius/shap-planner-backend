@@ -6,11 +6,14 @@ import (
 	"net/http"
 	"os"
 	"shap-planner-backend/auth"
+	"shap-planner-backend/config"
 	"shap-planner-backend/models"
 	"shap-planner-backend/storage"
 	"shap-planner-backend/utils"
 	"time"
 )
+
+var cfg, _ = config.LoadConfig()
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	var user models.User
@@ -108,6 +111,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			"username": user.Username,
 			"role":     user.Role,
 		},
+		"wgName": cfg.HouseholdName,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

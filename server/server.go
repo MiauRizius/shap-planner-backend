@@ -15,6 +15,8 @@ type Server struct {
 	DatabasePath string
 }
 
+var cfg, _ = config.LoadConfig()
+
 func InitServer() *Server {
 
 	err := config.CheckIfExists()
