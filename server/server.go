@@ -45,13 +45,16 @@ func InitServer() *Server {
 func (server *Server) Run() {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/login", handlers.Login)
+	// Public
+	mux.HandleFunc("/api/login", handlers.Login)
+	mux.HandleFunc("/api/register", handlers.Register)
 
-	protected := auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.GetExpenses))
-	mux.Handle("/expenses", protected)
+	// Login required
+	mux.Handle("/api/expenses", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.GetExpenses)))
+	mux.Handle("/api/ping", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.TestHandler)))
 
-	adminOnly := auth.AuthMiddleware(server.JWTSecret)(auth.RequireRole("admin")(http.HandlerFunc(handlers.AdminPanel)))
-	mux.Handle("/admin", adminOnly)
+	// Admin-only
+	mux.Handle("/api/admin", auth.AuthMiddleware(server.JWTSecret)(auth.RequireRole("admin")(http.HandlerFunc(handlers.AdminPanel))))
 
 	log.Printf("Listening on port %s", server.Port)
 	log.Fatal(http.ListenAndServe(":"+server.Port, mux))

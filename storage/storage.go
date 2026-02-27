@@ -2,8 +2,9 @@ package storage
 
 import (
 	"database/sql"
-	_ "github.com/glebarez/go-sqlite"
 	"shap-planner-backend/models"
+
+	_ "github.com/glebarez/go-sqlite"
 )
 
 var DB *sql.DB
@@ -34,7 +35,7 @@ func InitDB(filepath string) error {
 }
 
 func AddUser(user models.User) error {
-	_, err := DB.Exec("INSERT INTO users(id, username, password) VALUES (?, ?, ?)", user.ID, user.Username, user.Password)
+	_, err := DB.Exec("INSERT INTO users(id, username, password, role) VALUES (?, ?, ?, ?)", user.ID, user.Username, user.Password, user.Role)
 	return err
 }
 
