@@ -18,17 +18,20 @@ var cfg, _ = config.LoadConfig()
 func Register(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		log.Println("[api/register] " + r.RemoteAddr + ": " + err.Error())
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	if user.Username == "" || user.Password == "" {
+		log.Println("[api/register] " + r.RemoteAddr + ": Username or Password is empty")
 		http.Error(w, "username and password required", http.StatusBadRequest)
 		return
 	}
 
 	hashed, err := auth.HashPassword(user.Password)
 	if err != nil {
+		log.Println("[api/register] " + r.RemoteAddr + ": " + err.Error())
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -37,11 +40,13 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	user.Role = "user"
 
 	if err := storage.AddUser(user); err != nil {
+		log.Println("[api/register] " + r.RemoteAddr + ": " + err.Error())
 		http.Error(w, "user already exists", http.StatusBadRequest)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	log.Println("[api/register] " + r.RemoteAddr + ": Successfully created user")
 }
 func Login(w http.ResponseWriter, r *http.Request) {
 	var creds struct {
@@ -49,36 +54,41 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+		log.Println("[api/login] " + r.RemoteAddr + ": " + err.Error())
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
 	user, err := storage.GetUserByUsername(creds.Username)
 	if err != nil {
+		log.Println("[api/login] " + r.RemoteAddr + ": " + err.Error())
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
 	if !auth.CheckPasswordHash(creds.Password, user.Password) {
-		println("invalid password")
+		log.Println("[api/login] " + r.RemoteAddr + ": Invalid credentials")
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
 	secret := []byte(os.Getenv("SHAP_JWT_SECRET"))
 	if len(secret) == 0 {
+		log.Println("[api/login] " + r.RemoteAddr + ": Server misconfiguration")
 		http.Error(w, "Server misconfiguration", http.StatusInternalServerError)
 		return
 	}
 
 	accessToken, err := auth.GenerateJWT(user.ID, user.Role, secret)
 	if err != nil {
+		log.Println("[api/login] " + r.RemoteAddr + ": " + err.Error())
 		http.Error(w, "Could not generate token", http.StatusInternalServerError)
 		return
 	}
 
 	refreshTokenPlain, err := utils.GenerateRefreshToken()
 	if err != nil {
+		log.Println("[api/login] " + r.RemoteAddr + ": " + err.Error())
 		http.Error(w, "could not generate refresh token", http.StatusInternalServerError)
 		return
 	}
@@ -97,6 +107,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:  time.Now().Unix(),
 		Revoked:    false,
 	}); err != nil {
+		log.Println("[api/login] " + r.RemoteAddr + ": " + err.Error())
 		http.Error(w, "could not save refresh token", http.StatusInternalServerError)
 		return
 	}
@@ -114,38 +125,57 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		log.Println("[api/login] " + r.RemoteAddr + ": " + err.Error())
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+	log.Println("[api/login] " + r.RemoteAddr + ": Successfully logged in")
 }
 func Logout(w http.ResponseWriter, r *http.Request) {
 	claims := r.Context().Value(auth.UserContextKey).(*auth.Claims)
-	storage.RevokeAllRefreshTokensForUser(claims.UserID)
+	err := storage.RevokeAllRefreshTokensForUser(claims.UserID)
+	if err != nil {
+		log.Println("[api/logout] " + r.RemoteAddr + ": " + err.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(204)
 }
 func TestHandler(w http.ResponseWriter, r *http.Request) {
 	claimsRaw := r.Context().Value(auth.UserContextKey)
 	if claimsRaw == nil {
+		log.Println("[api/ping] " + r.RemoteAddr + ": No claims found")
 		http.Error(w, "No claims in context", http.StatusUnauthorized)
 		return
 	}
 
 	claims, ok := claimsRaw.(*auth.Claims)
 	if !ok {
+		log.Println("[api/ping] " + r.RemoteAddr + ": Invalid claims")
 		http.Error(w, "Invalid claims", http.StatusUnauthorized)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"user_id": claims.UserID,
 		"role":    claims.Role,
 		"msg":     "access granted to protected endpoint",
 	})
+	if err != nil {
+		log.Println("[api/ping] " + r.RemoteAddr + ": " + err.Error())
+		return
+	}
+	log.Println("[api/login] " + r.RemoteAddr + ": Successfully tested connection")
 }
 func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		RefreshToken string `json:"refresh_token"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Println("[api/refresh] " + r.RemoteAddr + ": " + err.Error())
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
@@ -154,6 +184,7 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	tokenRow, err := storage.GetRefreshToken(hashed)
 	if err != nil || tokenRow.Revoked || tokenRow.ExpiresAt < time.Now().Unix() {
+		log.Println("[api/refresh] " + r.RemoteAddr + ": Invalid refresh token")
 		http.Error(w, "Invalid refresh token", http.StatusUnauthorized)
 		return
 	}
@@ -176,6 +207,8 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 		Revoked:    false,
 		DeviceInfo: deviceInfo,
 	}); err != nil {
+		log.Println("[api/refresh] " + r.RemoteAddr + ": " + err.Error())
+		http.Error(w, "Could not generate new refresh token", http.StatusInternalServerError)
 		return
 	}
 
@@ -185,6 +218,8 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 		"access_token":  accessToken,
 		"refresh_token": newToken,
 	}); err != nil {
+		log.Println("[api/refresh] " + r.RemoteAddr + ": " + err.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 }
