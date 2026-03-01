@@ -45,18 +45,23 @@ func Expenses(w http.ResponseWriter, r *http.Request) {
 			share.ID = utils.GenerateUUID()
 			err := storage.AddShare(&share)
 			if err != nil {
-				println(err.Error())
 				http.Error(w, "Error adding expense", http.StatusBadRequest) // Should never happen
 				return
 			}
 		}
 		err := storage.AddExpense(&body.Expense)
 		if err != nil {
-			println(err.Error())
 			http.Error(w, "Error adding expense", http.StatusBadRequest)
 			return
 		}
-		w.WriteHeader(http.StatusCreated)
+		err = json.NewEncoder(w).Encode(map[string]interface{}{
+			"expense": body.Expense,
+			"shares":  body.Shares,
+		})
+		if err != nil {
+			println(err.Error())
+			return
+		}
 		break
 	case http.MethodPut: // -> Update Expense
 		break
