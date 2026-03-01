@@ -39,7 +39,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	user.ID = utils.GenerateUUID()
 	user.Role = "user"
 
-	if err := storage.AddUser(user); err != nil {
+	if err := storage.AddUser(&user); err != nil {
 		log.Println("[api/register] " + r.RemoteAddr + ": " + err.Error())
 		http.Error(w, "user already exists", http.StatusBadRequest)
 		return
@@ -98,7 +98,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	deviceInfo := r.Header.Get("User-Agent")
 
-	if err := storage.AddRefreshToken(models.RefreshToken{
+	if err := storage.AddRefreshToken(&models.RefreshToken{
 		ID:         refreshID,
 		UserID:     user.ID,
 		Token:      refreshHash,
@@ -144,19 +144,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(204)
 }
 func TestHandler(w http.ResponseWriter, r *http.Request) {
-	claimsRaw := r.Context().Value(auth.UserContextKey)
-	if claimsRaw == nil {
-		log.Println("[api/ping] " + r.RemoteAddr + ": No claims found")
-		http.Error(w, "No claims in context", http.StatusUnauthorized)
-		return
-	}
-
-	claims, ok := claimsRaw.(*auth.Claims)
-	if !ok {
-		log.Println("[api/ping] " + r.RemoteAddr + ": Invalid claims")
-		http.Error(w, "Invalid claims", http.StatusUnauthorized)
-		return
-	}
+	claims, _ := utils.IsLoggedIn(w, r)
 
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(map[string]interface{}{
@@ -198,7 +186,7 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 	newExpires := time.Now().Add(7 * 24 * time.Hour).Unix() //7 days
 	newID := utils.GenerateUUID()
 	deviceInfo := r.Header.Get("User-Agent")
-	if err = storage.AddRefreshToken(models.RefreshToken{
+	if err = storage.AddRefreshToken(&models.RefreshToken{
 		ID:         newID,
 		UserID:     tokenRow.UserID,
 		Token:      newHash,

@@ -59,7 +59,7 @@ func (server *Server) Run() {
 	mux.HandleFunc("/api/logout", handlers.Logout)
 
 	// Login required
-	mux.Handle("/api/expenses", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.GetExpenses)))
+	mux.Handle("/api/expenses", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.Expenses)))
 	mux.Handle("/api/ping", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.TestHandler)))
 
 	// Admin-only

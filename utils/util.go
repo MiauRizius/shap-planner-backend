@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"net/http"
+	"shap-planner-backend/auth"
 
 	"github.com/google/uuid"
 )
@@ -30,4 +32,18 @@ func GenerateRefreshToken() (string, error) {
 func HashToken(token string) string {
 	hash := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(hash[:])
+}
+func IsLoggedIn(w http.ResponseWriter, r *http.Request) (*auth.Claims, bool) {
+	claimsRaw := r.Context().Value(auth.UserContextKey)
+	if claimsRaw == nil {
+		http.Error(w, "No claims in context", http.StatusUnauthorized)
+		return nil, false
+	}
+
+	claims, ok := claimsRaw.(*auth.Claims)
+	if !ok {
+		http.Error(w, "Invalid claims", http.StatusUnauthorized)
+		return nil, false
+	}
+	return claims, true
 }

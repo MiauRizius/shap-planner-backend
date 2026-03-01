@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"shap-planner-backend/models"
 	"strings"
@@ -51,14 +52,89 @@ func InitDB(filepath string) error {
 
 	//Create Expenses-Table
 	_, err = DB.Exec(`CREATE TABLE IF NOT EXISTS expenses(
-    	id TEXT PRIMARY KEY
-        
+    	id TEXT PRIMARY KEY,
+        payer_id TEXT NOT NULL,
+        amount_cents INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        attachments TEXT,
+        created_at INTEGER NOT NULL,
+        last_updated_at INTEGER NOT NULL,
+        FOREIGN KEY(payer_id) REFERENCES users(id)
 	)`)
+	if err != nil {
+		return err
+	}
+	_, err = DB.Exec(`CREATE TABLE IF NOT EXISTS expense_shares(
+    	id TEXT PRIMARY KEY,
+		expense_id TEXT NOT NULL,
+		user_id TEXT NOT NULL,
+		share_cents INTEGER NOT NULL,
+		FOREIGN KEY(user_id) REFERENCES users(id)
+	)`)
+	if err != nil {
+		return err
+	}
+	_, err = DB.Exec(`CREATE INDEX IF NOT EXISTS idx_shares_expense ON expense_shares(expense_id)`)
+	if err != nil {
+		return err
+	}
+	_, err = DB.Exec(`CREATE INDEX IF NOT EXISTS idx_shares_user ON expense_shares(user_id)`)
+	return err
+}
+
+// Expenses
+func AddExpense(expense *models.Expense) error {
+	var attachmentsData interface{}
+	if len(expense.Attachments) > 0 {
+		jsonBytes, err := json.Marshal(expense.Attachments)
+		if err != nil {
+			return err
+		}
+		attachmentsData = string(jsonBytes)
+	} else {
+		attachmentsData = nil
+	}
+	_, err := DB.Exec(`INSERT INTO expenses(id, payer_id, amount_cents, title, description, attachments, created_at, last_updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		expense.ID,
+		expense.PayerID,
+		expense.Amount,
+		expense.Title,
+		expense.Description,
+		attachmentsData,
+		expense.CreatedAt,
+		expense.LastUpdatedAt)
+	return err
+}
+func UpdateExpense(expense *models.Expense) error {
+	return nil
+}
+func DeleteExpense(expense *models.Expense) error {
+	return nil
+}
+
+//	func GetExpenseById(id string) (models.Expense, error) {
+//		return nil, nil
+//	}
+func GetExpensesByUserId(userId string) ([]models.Expense, error) {
+	return nil, nil
+}
+func GetAllExpenses() ([]models.Expense, error) {
+	return nil, nil
+}
+
+// Expense Shares
+func AddShare(share *models.ExpenseShare) error {
+	_, err := DB.Exec("INSERT INTO expense_shares(id, expense_id, user_id, share_cents) VALUES (?, ?, ?, ?)",
+		share.ID,
+		share.ExpenseID,
+		share.UserID,
+		share.ShareCents)
 	return err
 }
 
 // Users
-func AddUser(user models.User) error {
+func AddUser(user *models.User) error {
 	_, err := DB.Exec("INSERT INTO users(id, username, password, role) VALUES (?, ?, ?, ?)", user.ID, strings.ToLower(user.Username), user.Password, user.Role)
 	return err
 }
@@ -76,7 +152,7 @@ func GetUserById(id string) (models.User, error) {
 }
 
 // Refresh Tokens
-func AddRefreshToken(token models.RefreshToken) error {
+func AddRefreshToken(token *models.RefreshToken) error {
 	_, err := DB.Exec("INSERT INTO refresh_tokens(id, user_id, token_hash, expires_at, created_at, revoked, device_info) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		token.ID, token.UserID, token.Token, token.ExpiresAt, token.CreatedAt, token.Revoked, token.DeviceInfo)
 	return err
