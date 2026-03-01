@@ -61,9 +61,9 @@ go run main.go
 ## Configuration
 ### Environment Variables
 
-| Variable       | Description                                           | Example          |
-|----------------|-------------------------------------------------------|----------------|
-| `SHAP-JWT_SECRET`   | Secret used to sign JWT tokens                        | `superrandomsecret123` |
+| Variable          | Description                                           | Example          |
+|-------------------|-------------------------------------------------------|----------------|
+| `SHAP_JWT_SECRET` | Secret used to sign JWT tokens                        | `superrandomsecret123` |
 
 ---
 
