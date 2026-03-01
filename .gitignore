@@ -2,3 +2,4 @@ appdata
 .idea
 *.exe
 *.cmd
+.run
