@@ -12,6 +12,7 @@ func main() {
 	err := storage.InitDB(SERVER.DatabasePath)
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
 
 	SERVER.Run()

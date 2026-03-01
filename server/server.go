@@ -22,19 +22,23 @@ func InitServer() *Server {
 	err := config.CheckIfExists()
 	if err != nil {
 		log.Fatal(err)
+		return nil
 	}
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal(err)
+		return nil
 	}
 
 	jwtSecret := os.Getenv("SHAP_JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("SHAP_JWT_SECRET environment variable not set.")
+		return nil
 	}
 	if len(jwtSecret) < 32 {
 		log.Fatal("SHAP_JWT_SECRET must be at least 32 characters long.")
+		return nil
 	}
 
 	return &Server{
@@ -45,6 +49,7 @@ func InitServer() *Server {
 }
 
 func (server *Server) Run() {
+	log.Println("Starting server...")
 	mux := http.NewServeMux()
 
 	// Public
