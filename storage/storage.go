@@ -133,6 +133,54 @@ func AddShare(share *models.ExpenseShare) error {
 	return err
 }
 
+// Balances
+func ComputeBalance(userId string) (float64, error) {
+	var balance float64
+	query := `
+		SELECT 
+			COALESCE(p.paid, 0) - COALESCE(s.shared, 0) AS balance
+		FROM (SELECT ? AS id) u
+		LEFT JOIN (
+			SELECT payer_id, SUM(amount_cents) AS paid 
+			FROM expenses 
+			WHERE payer_id = ?
+			GROUP BY payer_id
+		) p ON u.id = p.payer_id
+		LEFT JOIN (
+			SELECT user_id, SUM(share_cents) AS shared 
+			FROM expense_shares 
+			WHERE user_id = ?
+			GROUP BY user_id
+		) s ON u.id = s.user_id`
+	err := DB.QueryRow(query, userId, userId, userId).Scan(&balance)
+	if err != nil {
+		return 0, err
+	}
+	return balance, nil
+}
+func ComputeWGBalance() (float64, error) {
+	var balance float64
+	query := `SELECT u.id AS user_id,
+       COALESCE(p.paid_cents,0) - COALESCE(s.share_cents,0) AS balance_cents
+FROM users u
+LEFT JOIN (
+    SELECT payer_id, SUM(amount_cents) AS paid_cents
+    FROM expenses
+    GROUP BY payer_id
+) p ON u.id = p.payer_id
+LEFT JOIN (
+    SELECT es.user_id, SUM(es.share_cents) AS share_cents
+    FROM expense_shares es
+    JOIN expenses e ON es.expense_id = e.id
+    GROUP BY es.user_id
+) s ON u.id = s.user_id)`
+	err := DB.QueryRow(query).Scan(&balance)
+	if err != nil {
+		return 0, err
+	}
+	return balance, nil
+}
+
 // Users
 func AddUser(user *models.User) error {
 	_, err := DB.Exec("INSERT INTO users(id, username, password, role) VALUES (?, ?, ?, ?)", user.ID, strings.ToLower(user.Username), user.Password, user.Role)
