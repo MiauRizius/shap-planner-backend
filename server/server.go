@@ -17,8 +17,6 @@ type Server struct {
 	PrivateKeyPath  string
 }
 
-var cfg, _ = config.LoadConfig()
-
 func InitServer() *Server {
 
 	err := config.CheckIfExists()

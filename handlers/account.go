@@ -200,7 +200,13 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, _ := auth.GenerateJWT(tokenRow.UserID, "", []byte(os.Getenv("SHAP_JWT_SECRET")))
+	user, err := storage.GetUserById(tokenRow.UserID)
+	if err != nil {
+		log.Println("POST [api/refresh] " + r.RemoteAddr + ": " + err.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	accessToken, _ := auth.GenerateJWT(tokenRow.UserID, user.Role, []byte(os.Getenv("SHAP_JWT_SECRET")))
 
 	if err = json.NewEncoder(w).Encode(map[string]string{
 		"access_token":  accessToken,
