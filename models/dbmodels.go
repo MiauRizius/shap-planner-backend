@@ -25,20 +25,7 @@ type ExpenseShare struct {
 	ShareCents int64  `json:"share_cents"`
 }
 
-type Role int
-
 const (
-	RoleUser = iota
-	RoleAdmin
+	RoleUser  = "user"
+	RoleAdmin = "admin"
 )
-
-func (r Role) String() string {
-	switch r {
-	case RoleUser:
-		return "user"
-	case RoleAdmin:
-		return "admin"
-	default:
-		return "unknown"
-	}
-}
