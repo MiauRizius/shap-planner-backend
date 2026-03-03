@@ -37,7 +37,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 	user.Password = hashed
 	user.ID = utils.GenerateUUID()
-	user.Role = "user"
+	user.Role = models.RoleUser
 
 	if err := storage.AddUser(&user); err != nil {
 		log.Println("POST [api/register] " + r.RemoteAddr + ": " + err.Error())
