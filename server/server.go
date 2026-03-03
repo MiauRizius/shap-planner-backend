@@ -10,9 +10,11 @@ import (
 )
 
 type Server struct {
-	Port         string
-	JWTSecret    []byte
-	DatabasePath string
+	Port            string
+	JWTSecret       []byte
+	DatabasePath    string
+	CertificatePath string
+	PrivateKeyPath  string
 }
 
 var cfg, _ = config.LoadConfig()
@@ -42,9 +44,11 @@ func InitServer() *Server {
 	}
 
 	return &Server{
-		Port:         cfg.Port,
-		JWTSecret:    []byte(jwtSecret),
-		DatabasePath: cfg.DatabasePath,
+		Port:            cfg.Port,
+		JWTSecret:       []byte(jwtSecret),
+		DatabasePath:    cfg.DatabasePath,
+		CertificatePath: cfg.CertificatePath,
+		PrivateKeyPath:  cfg.PrivateKeyPath,
 	}
 }
 
@@ -62,10 +66,11 @@ func (server *Server) Run() {
 	mux.Handle("/api/expenses", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.Expenses)))
 	mux.Handle("/api/balance", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.GetBalance)))
 	mux.Handle("/api/ping", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.TestHandler)))
+	mux.Handle("/api/userinfo", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.UserInfo)))
 
 	// Admin-only
 	mux.Handle("/api/admin", auth.AuthMiddleware(server.JWTSecret)(auth.RequireRole("admin")(http.HandlerFunc(handlers.AdminPanel))))
 
 	log.Printf("Listening on port %s", server.Port)
-	log.Fatal(http.ListenAndServe(":"+server.Port, mux))
+	log.Fatal(http.ListenAndServeTLS(":"+server.Port, server.CertificatePath, server.PrivateKeyPath, mux))
 }

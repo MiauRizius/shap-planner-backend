@@ -15,6 +15,18 @@ func Expenses(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet: // -> Get Expenses
+		expenses, err := storage.GetAllExpenses()
+		if err != nil {
+			log.Println("GET [api/expense] " + r.RemoteAddr + ": " + err.Error())
+			http.Error(w, "Something went wrong", http.StatusInternalServerError)
+			return
+		}
+		err = json.NewEncoder(w).Encode(expenses)
+		if err != nil {
+			log.Println("GET [api/expense] " + r.RemoteAddr + ": " + err.Error())
+			return
+		}
+		log.Println("GET [api/expense] " + r.RemoteAddr + ": Successfully retrieved expenses")
 		break
 	case http.MethodPost: // -> Create Expense
 		var body struct {

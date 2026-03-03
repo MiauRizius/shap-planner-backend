@@ -9,9 +9,11 @@ import (
 )
 
 type Config struct {
-	HouseholdName string `yaml:"household_name"`
-	Port          string `yaml:"port"`
-	DatabasePath  string `yaml:"database_path"`
+	HouseholdName   string `yaml:"household_name"`
+	Port            string `yaml:"port"`
+	DatabasePath    string `yaml:"database_path"`
+	CertificatePath string `yaml:"certificate_path"`
+	PrivateKeyPath  string `yaml:"private_key_path"`
 }
 
 const configPath = "./appdata/config.yaml"
@@ -33,9 +35,11 @@ func CheckIfExists() error {
 	}
 
 	defaultConfig := Config{
-		Port:          "8080",
-		DatabasePath:  "./appdata/database.db",
-		HouseholdName: "Example-Household",
+		Port:            "8080",
+		DatabasePath:    "./appdata/database.db",
+		HouseholdName:   "Example-Household",
+		CertificatePath: "./appdata/cert.pem",
+		PrivateKeyPath:  "./appdata/key.pem",
 	}
 
 	data, err := yaml.Marshal(defaultConfig)

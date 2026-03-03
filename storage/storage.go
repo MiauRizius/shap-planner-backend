@@ -120,7 +120,35 @@ func GetExpensesByUserId(userId string) ([]models.Expense, error) {
 	return nil, nil
 }
 func GetAllExpenses() ([]models.Expense, error) {
-	return nil, nil
+	query := "SELECT * FROM expenses"
+	rows, err := DB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var expenses []models.Expense
+
+	for rows.Next() {
+		var expense models.Expense
+		var attachmentsJSON []byte
+
+		err := rows.Scan(&expense.ID, &expense.PayerID, &expense.Amount, &expense.Title, &expense.Description, &attachmentsJSON, &expense.CreatedAt, &expense.LastUpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		if len(attachmentsJSON) > 0 {
+			err := json.Unmarshal(attachmentsJSON, &expense.Attachments)
+			if err != nil {
+				return nil, err
+			}
+		}
+		expenses = append(expenses, expense)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return expenses, nil
 }
 
 // Expense Shares

@@ -7,17 +7,13 @@ import (
 )
 
 func main() {
-	var SERVER = server.InitServer()
+	var _server = server.InitServer()
 
-	err := storage.InitDB(SERVER.DatabasePath)
+	err := storage.InitDB(_server.DatabasePath)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	SERVER.Run()
-}
-
-func Setup() {
-	//TODO: first configuration
+	_server.Run()
 }

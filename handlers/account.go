@@ -210,4 +210,31 @@ func RefreshToken(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
+	log.Println("POST [api/refresh] " + r.RemoteAddr + ": Successfully refreshed token")
+}
+func UserInfo(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		log.Println("GET [api/userinfo] " + r.RemoteAddr + ": Method " + r.Method + " not allowed")
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	query := r.URL.Query()
+	idParam := query.Get("id")
+	user, err := storage.GetUserById(idParam)
+	if err != nil {
+		log.Println("GET [api/userinfo] " + r.RemoteAddr + ": User " + idParam + " not found")
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(map[string]interface{}{
+		"id":         user.ID,
+		"name":       user.Username,
+		"avatar_url": nil,
+	})
+	if err != nil {
+		log.Println("GET [api/userinfo] " + r.RemoteAddr + ": " + err.Error())
+		return
+	}
+	log.Println("GET [api/userinfo] " + r.RemoteAddr + ": Successfully retrieved user info")
 }
