@@ -1,11 +1,11 @@
 package models
 
 type RefreshToken struct {
-	ID         string `json:id`
-	UserID     string `json:userid`
-	Token      string `json:token`
-	ExpiresAt  int64  `json:expiresat`
-	CreatedAt  int64  `json:createdat`
-	Revoked    bool   `json:revoked`
-	DeviceInfo string `json:deviceinfo`
+	ID         string `json:"id"`
+	UserID     string `json:"userid"`
+	Token      string `json:"token"`
+	ExpiresAt  int64  `json:"expires_at"`
+	CreatedAt  int64  `json:"created_at"`
+	Revoked    bool   `json:"revoked"`
+	DeviceInfo string `json:"device_info"`
 }
