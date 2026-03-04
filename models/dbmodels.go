@@ -24,8 +24,3 @@ type ExpenseShare struct {
 	UserID     string `json:"user_id"`
 	ShareCents int64  `json:"share_cents"`
 }
-
-const (
-	RoleUser  = "user"
-	RoleAdmin = "admin"
-)

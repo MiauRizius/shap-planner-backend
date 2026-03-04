@@ -7,6 +7,7 @@ import (
 	"shap-planner-backend/models"
 	"shap-planner-backend/storage"
 	"shap-planner-backend/utils"
+	"strings"
 	"time"
 )
 
@@ -21,7 +22,9 @@ func Expenses(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
-		err = json.NewEncoder(w).Encode(expenses)
+		err = json.NewEncoder(w).Encode(map[string]interface{}{
+			"expenses": expenses,
+		})
 		if err != nil {
 			log.Println("GET [api/expense] " + r.RemoteAddr + ": " + err.Error())
 			return
@@ -98,6 +101,58 @@ func Expenses(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPut: // -> Update Expense
 		break
 	case http.MethodDelete: // -> Delete Expense
+	default:
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+	}
+}
+func ExpenseShares(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		query := r.URL.Query()
+		idParam := query.Get("id")
+		idTypeParam := strings.ToLower(query.Get("idType"))
+		if idTypeParam == models.IDTypeEXPENSE {
+			println(idParam)
+			shares, err := storage.GetSharesByExpenseId(idParam)
+			if err != nil {
+				log.Println("GET [api/shares] " + r.RemoteAddr + ": " + err.Error())
+				http.Error(w, "Something went wrong", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			err = json.NewEncoder(w).Encode(map[string]interface{}{
+				"shares": shares,
+			})
+			if err != nil {
+				log.Println("GET [api/shares] " + r.RemoteAddr + ": " + err.Error())
+				return
+			}
+			log.Println("GET [api/shares] " + r.RemoteAddr + ": Successfully retrieved shares")
+		} else if idTypeParam == models.IDTypeSHARE || idTypeParam == "" {
+			share, err := storage.GetShareById(idParam)
+			if err != nil {
+				log.Println("GET [api/shares] " + r.RemoteAddr + ": " + err.Error())
+				http.Error(w, "Something went wrong", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			err = json.NewEncoder(w).Encode(map[string]interface{}{
+				"id":          share.ID,
+				"expense_id":  share.ExpenseID,
+				"user_id":     share.UserID,
+				"share_cents": share.ShareCents,
+			})
+			if err != nil {
+				log.Println("GET [api/shares] " + r.RemoteAddr + ": " + err.Error())
+				return
+			}
+			log.Println("GET [api/shares] " + r.RemoteAddr + ": Successfully retrieved shares")
+		}
+		break
+	case http.MethodPut:
+		break
+	case http.MethodDelete:
+		break
 	default:
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 	}

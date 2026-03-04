@@ -236,7 +236,7 @@ func UserInfo(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(map[string]interface{}{
 		"id":         user.ID,
 		"name":       user.Username,
-		"avatar_url": nil,
+		"avatar_url": "",
 	})
 	if err != nil {
 		log.Println("GET [api/userinfo] " + r.RemoteAddr + ": " + err.Error())

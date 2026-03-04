@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -12,8 +11,6 @@ type Claims struct {
 	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
-
-var secret = os.Getenv("SHAP_JWT_SECRET")
 
 func GenerateJWT(userID, role string, secret []byte) (string, error) {
 	claims := Claims{

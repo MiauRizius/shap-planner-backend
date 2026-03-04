@@ -62,6 +62,7 @@ func (server *Server) Run() {
 
 	// Login required
 	mux.Handle("/api/expenses", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.Expenses)))
+	mux.Handle("/api/shares", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.ExpenseShares)))
 	mux.Handle("/api/balance", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.GetBalance)))
 	mux.Handle("/api/ping", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.TestHandler)))
 	mux.Handle("/api/userinfo", auth.AuthMiddleware(server.JWTSecret)(http.HandlerFunc(handlers.UserInfo)))

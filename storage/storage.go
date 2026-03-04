@@ -160,6 +160,36 @@ func AddShare(share *models.ExpenseShare) error {
 		share.ShareCents)
 	return err
 }
+func GetShareById(id string) (models.ExpenseShare, error) {
+	row := DB.QueryRow("SELECT * FROM expense_shares WHERE id = ?", id)
+	var share models.ExpenseShare
+	err := row.Scan(&share.ID, &share.ExpenseID, &share.UserID, &share.ShareCents)
+	return share, err
+}
+func GetSharesByExpenseId(id string) ([]models.ExpenseShare, error) {
+	query := "SELECT * FROM expense_shares WHERE expense_id = ?"
+	rows, err := DB.Query(query, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var shares []models.ExpenseShare
+
+	for rows.Next() {
+		var share models.ExpenseShare
+
+		err := rows.Scan(&share.ID, &share.ExpenseID, &share.UserID, &share.ShareCents)
+		if err != nil {
+			return nil, err
+		}
+		shares = append(shares, share)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return shares, nil
+}
 
 // Balances
 func ComputeBalance(userId string) (float64, error) {
